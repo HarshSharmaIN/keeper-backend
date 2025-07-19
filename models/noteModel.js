@@ -10,10 +10,8 @@ const noteSchema = new mongoose.Schema({
     required: true,
   },
   style: {
-    color: { type: String, required: true },
-    backgroundColor: { type: String, required: true },
-    fontFamily: { type: String, required: true },
-    fontSize: { type: String, required: true },
+    type: Object,
+    required: true,
   },
   type: {
     type: String,

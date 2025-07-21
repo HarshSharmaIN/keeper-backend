@@ -4,7 +4,7 @@ const { Note } = require("../models/noteModel");
 async function createNote(req, res, next) {
   try {
     const { title, content, style, type } = req.body;
-    if (!title || !content)
+    if (!title || !content || !style || !type)
       return res.json({ message: "Please enter all fields" });
     const note = await Note.create({ title, content, style, type });
     const user = await User.findById(req.user._id);
@@ -19,7 +19,7 @@ async function createNote(req, res, next) {
 
 async function getNotes(req, res, next) {
   try {
-    const user = await User.findById(req.user._id).populate("notes");
+    const user = await User.findById(req.user._id);
     res.json({ notes: user.notes });
     next();
   } catch (error) {

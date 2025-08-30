@@ -3,8 +3,7 @@ const {
   Login,
   Signup,
   googleLogin,
-  sendOtp,
-  verifyOtp,
+  checkUser,
   updateDetails,
 } = require("../controllers/authController");
 const userVerification = require("../middleware/authMiddleware");
@@ -21,8 +20,7 @@ router.post("/verify", userVerification, (req, res) => {
 router.post("/login", Login);
 router.post("/signup", Signup);
 router.post("/google-login", googleLogin);
-router.post("/generate-otp", sendOtp);
-router.post("/verify-otp", verifyOtp);
+router.post("/check-user", checkUser);
 router.post("/user-details", updateDetails);
 
 module.exports = router;

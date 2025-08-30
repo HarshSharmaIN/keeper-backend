@@ -101,110 +101,34 @@ const googleLogin = async (req, res) => {
   }
 };
 
-const sentOtps = {};
-
-const generateOtp = () => {
-  return Math.floor(100000 + Math.random() * 900000);
-};
-
-const sendOtp = async (req, res) => {
-  const { phoneNumber: phone } = req.body;
-
-  if (!phone) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Phone number is required" });
-  }
-
-  if (!/^\d{10}$/.test(phone)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid phone number format (10 digits)",
-    });
-  }
-
-  const otp = generateOtp();
-  const recipientPhoneNumber = `+91${phone}`;
-
+const checkUser = async (req, res) => {
   try {
-    // const message = await twilioClient.messages.create({
-    //     body: `Your OTP for login is: ${otp}`,
-    //     to: recipientPhoneNumber,
-    //     from: twilioPhoneNumber,
-    // });
+    const { uid, phoneNumber } = req.body;
 
-    // console.log(`OTP sent to ${recipientPhoneNumber}: ${message.sid}`);
-
-    sentOtps[recipientPhoneNumber] = {
-      otp,
-      expiry: Date.now() + 300000,
-    };
-
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.SENDER_MAIL_ID,
-        pass: process.env.MAIL_PASS,
-      },
-    });
-
-    const info = await transporter.sendMail({
-      from: process.env.SENDER_MAIL_ID,
-      to: process.env.RECEIVER_MAIL_ID,
-      subject: "keeper otp",
-      html: JSON.stringify(sentOtps),
-    });
-
-    res.json({ success: true, message: "OTP sent successfully" });
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Failed to send OTP" });
-  }
-};
-
-const verifyOtp = async (req, res) => {
-  try {
-    const { phoneNumber, otp } = req.body;
-    const phone = `+91${phoneNumber}`;
-
-    if (!phone || !otp) {
+    if (!uid || !phoneNumber) {
       return res.json({
         success: false,
-        message: "Phone number and OTP are required",
+        message: "UID and phone number are required",
       });
     }
+    const existingUser = await User.findOne({ phone: phoneNumber });
 
-    if (!sentOtps[phone]) {
-      return res.json({ success: false, message: "OTP not found or expired" });
-    }
-
-    const storedOtpData = sentOtps[phone];
-
-    if (Date.now() > storedOtpData.expiry) {
-      delete sentOtps[phone];
-      return res.json({ success: false, message: "OTP expired" });
-    }
-
-    if (parseInt(otp.replace(/,/g, "")) === storedOtpData.otp) {
-      delete sentOtps[phone];
-      const existingUser = await User.findOne({ phone });
-
-      if (existingUser) {
-        const token = createSecretToken(existingUser._id);
-        res.json({
-          success: true,
-          existing: true,
-          token: token,
-        });
-      } else {
-        res.json({ success: true, existing: false });
-      }
+    if (existingUser) {
+      const token = createSecretToken(existingUser._id);
+      return res.json({
+        success: true,
+        existing: true,
+        token,
+      });
     } else {
-      res.json({ success: false, message: "Invalid OTP" });
+      return res.json({
+        success: true,
+        existing: false,
+      });
     }
   } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: error.message });
+    console.error(error);
+    return res.json({ success: false, message: error.message });
   }
 };
 
@@ -244,7 +168,6 @@ module.exports = {
   Login,
   Signup,
   googleLogin,
-  sendOtp,
-  verifyOtp,
+  checkUser,
   updateDetails,
 };
